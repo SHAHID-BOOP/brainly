@@ -1,9 +1,10 @@
 import express from "express";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
-import { userModel } from "./db.js";
+import { ContentModel, userModel } from "./db.js";
+import { JWT_SECRET } from "./config.js";
+import { userMiddleware } from "./middleware.js";
 
-const JWT_SECRET = "123"
 const app = express();
 app.use(express.json());
 
@@ -25,7 +26,7 @@ app.post("/api/v1/signup", async (req,res) => {
             message: "USer already exists"
         })
     }
-})
+});
 
 app.post("/api/v1/signin", async (req,res) => {
     const username = req.body.username;
@@ -49,19 +50,47 @@ app.post("/api/v1/signin", async (req,res) => {
             message: "incorrect credentials"
         })
     }
-})
+});
 
-app.post("/api/v1/content", (req,res) => {
+app.post("/api/v1/content", userMiddleware, async (req,res) => {
     const link = req.body.link;
     const type = req.body.type;
+
+    await ContentModel.create({
+        link,
+        type,
+        // @ts-ignore
+        userId: req.userId,
+        tags: []
+    })
+
+    res.json({
+        message: "Content added"
+    })
 })
 
-app.get("/api/v1/content", (req,res) => {
-    
+app.get("/api/v1/content",userMiddleware, async (req,res) => {
+    // @ts-ignore
+    const userId = req.userId;
+    const content = await ContentModel.find({
+        userId: userId
+    }).populate("userId")
+    res.json({
+        content
+    })
 })
 
-app.delete("api/v1/content", (req,res) => {
+app.delete("api/v1/content", async (req,res) => {
+    const contentId = req.body.contetnId; 
 
+    await ContentModel.deleteMany({
+        contentId,
+        // @ts-ignore
+        userId: req.userId
+    })
+    res.json({
+        message: "deleted"
+    })
 })
 
 app.post("/api/v1/brain/share", (req,res) => {
