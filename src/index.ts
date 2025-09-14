@@ -1,5 +1,4 @@
 import express from "express";
-import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { ContentModel, userModel } from "./db.js";
 import { JWT_SECRET } from "./config.js";
@@ -80,7 +79,7 @@ app.get("/api/v1/content",userMiddleware, async (req,res) => {
     })
 })
 
-app.delete("api/v1/content", async (req,res) => {
+app.delete("api/v1/content", userMiddleware, async (req,res) => {
     const contentId = req.body.contetnId; 
 
     await ContentModel.deleteMany({
